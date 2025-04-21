@@ -1,0 +1,21 @@
+
+=== BÁO CÁO GIẤC NGỦ ===
+Ngày: 1/1/2000
+Giờ đi ngủ: 14:04 PM
+Giờ thức dậy: 21:10 PM
+Tổng thời gian ngủ: 7h 6p
+
+Ngủ sâu: 7h 6p (100%)
+Ngủ nhẹ: 0h 0p (0%)
+REM: 0h 0p (0%)
+
+===== CHI TIẾT CÁC GIAI ĐOẠN GIẤC NGỦ =====
+
+Bắt đầu | Kết thúc | Thời lượng | Loại giấc ngủ
+--------|----------|------------|-------------
+14:04 | 21:10 | 7h 6min | Ngủ sâu
+
+===== ĐÁNH GIÁ CHẤT LƯỢNG GIẤC NGỦ =====
+Giấc ngủ bình thường
+    
+===== KHUYẾN NGHỊ =====

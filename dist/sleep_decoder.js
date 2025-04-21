@@ -1,0 +1,1243 @@
+"use strict";
+/**
+ * Bộ giải mã dữ liệu giấc ngủ từ nhẫn thông minh
+ * Dựa trên phân tích từ các file: DataUnpack.java, SleepResponse.java, CMD.java
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SleepType = void 0;
+exports.decodeSleepDataFromLog = decodeSleepDataFromLog;
+exports.decodeSleepDataFromDevice = decodeSleepDataFromDevice;
+exports.generateSleepReportFromLog = generateSleepReportFromLog;
+exports.generateSleepReport = generateSleepReport;
+// Định nghĩa các loại giấc ngủ từ SleepResponse.java
+var SleepType;
+(function (SleepType) {
+    SleepType[SleepType["UNKNOWN"] = -1] = "UNKNOWN";
+    SleepType[SleepType["DEEP_SLEEP"] = 241] = "DEEP_SLEEP";
+    SleepType[SleepType["LIGHT_SLEEP"] = 242] = "LIGHT_SLEEP";
+    SleepType[SleepType["REM"] = 243] = "REM";
+    SleepType[SleepType["AWAKE"] = 244] = "AWAKE";
+})(SleepType || (exports.SleepType = SleepType = {}));
+// Định nghĩa các mã lệnh từ CMD.java
+var CMD;
+(function (CMD) {
+    CMD[CMD["HEALTH"] = 5] = "HEALTH";
+})(CMD || (CMD = {}));
+// Định nghĩa các lệnh con của Health từ CMD.java
+var KEY_Health;
+(function (KEY_Health) {
+    KEY_Health[KEY_Health["HISTORY_SLEEP"] = 4] = "HISTORY_SLEEP";
+    KEY_Health[KEY_Health["HISTORY_SLEEP_ACK"] = 19] = "HISTORY_SLEEP_ACK";
+    KEY_Health[KEY_Health["DELETE_SLEEP"] = 65] = "DELETE_SLEEP";
+})(KEY_Health || (KEY_Health = {}));
+// Hằng số
+const UNIX_TIMESTAMP_2000 = 946684800; // 01/01/2000 00:00:00 UTC
+const MAX_SLEEP_DURATION = 57600; // 16 giờ tính bằng giây
+/**
+ * Chuyển đổi từ byte array thành số nguyên (little-endian)
+ * Mỗi byte được mask với 0xFF để đảm bảo đọc chính xác giá trị không dấu
+ */
+function bytesToInt(bytes, offset = 0, length = 4) {
+    let result = 0;
+    for (let i = 0; i < length; i++) {
+        result += (bytes[offset + i] & 0xFF) << (8 * i);
+    }
+    return result;
+}
+/**
+ * Chuyển đổi timestamp từ dữ liệu nhẫn thành Date
+ * Timestamp từ nhẫn tính từ 01/01/2000, nhân 1000 để đổi thành millisecond
+ * Xử lý múi giờ đúng cách để đảm bảo thời gian hiển thị chính xác
+ */
+function parseTimestamp(timestamp) {
+    // Kiểm tra timestamp hợp lệ
+    if (timestamp <= 0) {
+        return new Date();
+    }
+    // Nhẫn thông minh sử dụng timestamp từ 01/01/2000 00:00:00
+    // Cần cộng thêm Unix timestamp ở thời điểm đó để chuyển đổi sang Unix timestamp
+    const milliseconds = (timestamp + UNIX_TIMESTAMP_2000) * 1000;
+    // Tạo đối tượng Date từ milliseconds
+    const date = new Date(milliseconds);
+    // Kiểm tra nếu timestamp vượt quá thời gian hiện tại
+    const now = new Date();
+    if (date > now) {
+        // Có thể có lỗi trong dữ liệu, trả về thời gian hiện tại
+        console.warn(`Timestamp ${timestamp} tạo ra thời gian trong tương lai: ${date.toISOString()}`);
+        return now;
+    }
+    return date;
+}
+/**
+ * Giải mã loại giấc ngủ từ byte dữ liệu
+ * Dựa theo SleepResponse.SleepType trong mã nguồn Java
+ * @param type Giá trị byte thể hiện loại giấc ngủ
+ */
+function decodeSleepType(type) {
+    // Dựa theo SleepResponse.SleepType
+    const sleepTypeValue = type & 0xFF; // Lấy byte thấp nhất
+    switch (sleepTypeValue) {
+        case 241:
+            return SleepType.DEEP_SLEEP; // Ngủ sâu
+        case 242:
+            return SleepType.LIGHT_SLEEP; // Ngủ nhẹ
+        case 243:
+            return SleepType.REM; // REM
+        case 244:
+            return SleepType.AWAKE; // Thức giấc
+        case 0:
+            // Trường hợp đặc biệt khi giá trị là 0, giải mã như LIGHT_SLEEP
+            // Theo SleepActivity.java, khi sleepType = 0, gán lại là 2 (LIGHT_SLEEP)
+            return SleepType.LIGHT_SLEEP;
+        default:
+            return SleepType.UNKNOWN;
+    }
+}
+/**
+ * Chuyển đổi từ loại giấc ngủ sang chuỗi mô tả
+ * @param type Loại giấc ngủ
+ * @returns Chuỗi mô tả loại giấc ngủ
+ */
+function getSleepTypeDescription(type) {
+    switch (type) {
+        case SleepType.DEEP_SLEEP:
+            return 'Ngủ sâu';
+        case SleepType.LIGHT_SLEEP:
+            return 'Ngủ nhẹ';
+        case SleepType.REM:
+            return 'Giấc ngủ REM';
+        case SleepType.AWAKE:
+            return 'Thức giấc';
+        default:
+            return 'Không xác định';
+    }
+}
+/**
+ * Chuyển đổi từ loại giấc ngủ sang số
+ * @param type Loại giấc ngủ
+ * @returns Mã số tương ứng
+ */
+function encodeSleepType(type) {
+    switch (type) {
+        case 'deep_sleep':
+            return 241;
+        case 'light_sleep':
+            return 242;
+        case 'rem_sleep':
+            return 243;
+        case 'awake':
+            return 244;
+        default:
+            return -1; // unknown
+    }
+}
+/**
+ * Định dạng thời gian theo "h h mm min"
+ */
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}min`;
+}
+/**
+ * Phân tích dữ liệu giấc ngủ từ gói dữ liệu 05 04, 05 11, 05 13
+ */
+function decodeSleepSegments(data) {
+    const segments = [];
+    const now = new Date();
+    // Kiểm tra gói dữ liệu có hợp lệ không
+    if (data.length < 5 || data[0] !== CMD.HEALTH) {
+        console.warn("Gói dữ liệu không hợp lệ hoặc không phải gói HEALTH");
+        return segments;
+    }
+    // Xác định loại gói dữ liệu
+    const packetType = data[1];
+    let offset = 3; // Bỏ qua 3 byte đầu tiên (cmd, subcmd, flags)
+    // Đọc độ dài dữ liệu (thường là 2 bytes)
+    let length = 0;
+    if (offset + 1 < data.length) {
+        length = bytesToInt(data, offset, 2);
+        offset += 2;
+    }
+    else {
+        console.warn("Không đủ dữ liệu để đọc độ dài gói");
+        return segments;
+    }
+    console.log(`Tìm thấy gói HEALTH loại ${packetType.toString(16)}, độ dài ${length} bytes`);
+    // Kiểm tra độ dài hợp lệ
+    if (length <= 0 || offset + length > data.length) {
+        console.warn(`Độ dài gói không hợp lệ: ${length}, chỉ có ${data.length - offset} bytes có sẵn`);
+        length = Math.max(0, Math.min(length, data.length - offset));
+    }
+    // Xử lý dựa trên loại gói dữ liệu
+    switch (packetType) {
+        case KEY_Health.HISTORY_SLEEP: // 0x04
+        case KEY_Health.HISTORY_SLEEP_ACK: // 0x13
+        case 0x11: // Gói dữ liệu chi tiết giấc ngủ
+            return decodeSleepDetailsPacket(data, offset, length);
+        default:
+            console.warn(`Loại gói HEALTH không được hỗ trợ: ${packetType.toString(16)}`);
+            return [];
+    }
+}
+/**
+ * Giải mã chi tiết từ gói dữ liệu giấc ngủ
+ * @param data Mảng byte dữ liệu
+ * @param offset Vị trí bắt đầu đọc
+ * @param length Độ dài dữ liệu cần đọc
+ */
+function decodeSleepDetailsPacket(data, offset, length) {
+    const segments = [];
+    // Độ dài tối thiểu cần thiết cho một đoạn giấc ngủ
+    // Thường là 9 bytes: timestamp(4) + sleepLen(2) + sleepType(1) + param(2)
+    const SEGMENT_MIN_SIZE = 9;
+    // Đọc từng đoạn dữ liệu giấc ngủ
+    while (offset + SEGMENT_MIN_SIZE <= data.length) {
+        // Thời điểm bắt đầu đoạn giấc ngủ (4 bytes)
+        const startTimestamp = bytesToInt(data, offset, 4);
+        offset += 4;
+        // Độ dài đoạn giấc ngủ tính bằng giây (2 bytes)
+        const sleepLen = bytesToInt(data, offset, 2);
+        offset += 2;
+        // Loại giấc ngủ (1 byte)
+        const sleepTypeRaw = data[offset] & 0xFF;
+        offset += 1;
+        // Tham số bổ sung (có thể là deepSleepCount hoặc các thông số khác)
+        // Thường là 2 bytes
+        let param = 0;
+        if (offset + 1 < data.length) {
+            param = bytesToInt(data, offset, 2);
+            offset += 2;
+        }
+        else {
+            // Nếu không đủ byte, bỏ qua và tăng offset
+            offset++;
+        }
+        // Kiểm tra tính hợp lệ của thời gian
+        if (startTimestamp <= 0 || sleepLen <= 0 || sleepLen > 28800) {
+            // Thời gian không hợp lệ, bỏ qua đoạn này
+            console.warn(`Bỏ qua đoạn giấc ngủ không hợp lệ: timestamp=${startTimestamp}, sleepLen=${sleepLen}`);
+            continue;
+        }
+        // Phân tích loại giấc ngủ
+        const sleepType = decodeSleepType(sleepTypeRaw);
+        // Tính thời điểm kết thúc đoạn giấc ngủ
+        const endTimestamp = startTimestamp + sleepLen;
+        // Chuyển từ timestamp sang đối tượng Date
+        const startTime = parseTimestamp(startTimestamp);
+        const endTime = parseTimestamp(endTimestamp);
+        // Thêm đoạn giấc ngủ vào kết quả
+        segments.push({
+            startTime,
+            endTime,
+            duration: sleepLen,
+            type: sleepType,
+            rawType: sleepTypeRaw,
+            param
+        });
+    }
+    return segments;
+}
+/**
+ * Giải mã dữ liệu nhịp tim từ gói dữ liệu 05 17
+ */
+function decodeHeartRateData(data) {
+    const heartRates = [];
+    // Kiểm tra gói dữ liệu hợp lệ
+    if (data.length < 5 || data[0] !== CMD.HEALTH) {
+        return heartRates;
+    }
+    // Bỏ qua 3 byte đầu tiên (05 17 xx)
+    let offset = 3;
+    // Đọc độ dài dữ liệu (2 bytes)
+    const length = bytesToInt(data, offset, 2);
+    offset += 2;
+    // Kiểm tra độ dài hợp lệ
+    if (length <= 0 || offset + length > data.length) {
+        return heartRates;
+    }
+    // Đọc từng mẫu dữ liệu nhịp tim, mỗi mẫu 5 bytes
+    // Cấu trúc: [timestamp 4 bytes][heart rate 1 byte]
+    while (offset + 5 <= data.length) {
+        // Timestamp (4 bytes)
+        const timestamp = bytesToInt(data, offset, 4);
+        offset += 4;
+        // Giá trị nhịp tim (1 byte)
+        const heartRateValue = data[offset] & 0xFF;
+        offset += 1;
+        // Xác nhận chỉ thêm vào nếu là dữ liệu nhịp tim hợp lệ (thường từ 40-200 BPM)
+        if (timestamp > 0 && heartRateValue >= 40 && heartRateValue <= 200) {
+            heartRates.push({
+                timestamp: parseTimestamp(timestamp),
+                heartRate: heartRateValue
+            });
+        }
+    }
+    return heartRates;
+}
+/**
+ * Tính toán tổng thời gian các giai đoạn giấc ngủ
+ */
+function calculateTotalTime(segments, type) {
+    return segments
+        .filter(segment => segment.type === type)
+        .reduce((total, segment) => total + segment.duration, 0);
+}
+/**
+ * Đánh giá chất lượng giấc ngủ dựa trên tỷ lệ ngủ sâu
+ */
+function analyzeSleepQuality(deepSleepTotal, totalDuration) {
+    const ratio = deepSleepTotal / totalDuration;
+    if (ratio >= 0.3)
+        return 3.0; // Giấc ngủ bình thường
+    if (ratio > 0)
+        return 2.0; // Thiếu ngủ
+    return 0; // Không xác định
+}
+/**
+ * Xử lý các đoạn giấc ngủ chồng chéo và gộp chúng lại
+ * @param segments Danh sách các đoạn giấc ngủ
+ * @returns Danh sách đã được gộp
+ */
+function handleOverlappingSegments(segments) {
+    if (segments.length <= 1)
+        return segments;
+    // Sắp xếp theo thời gian bắt đầu
+    const sortedSegments = [...segments].sort((a, b) => a.startTime - b.startTime);
+    const result = [];
+    let current = sortedSegments[0];
+    for (let i = 1; i < sortedSegments.length; i++) {
+        const next = sortedSegments[i];
+        // Kiểm tra chồng chéo
+        if (next.startTime <= current.endTime) {
+            // Nếu cùng loại giấc ngủ hoặc loại tiếp theo là UNKNOWN, gộp lại
+            if (next.type === current.type || next.type === SleepType.UNKNOWN) {
+                current = {
+                    startTime: current.startTime,
+                    endTime: Math.max(current.endTime, next.endTime),
+                    type: current.type,
+                    duration: Math.max(current.endTime, next.endTime) - current.startTime
+                };
+            }
+            // Nếu thời điểm bắt đầu của đoạn tiếp theo quá nhỏ so với đoạn hiện tại
+            else if (next.startTime < current.startTime + current.duration / 2) {
+                // Tách thành hai đoạn
+                const midpoint = Math.floor((next.startTime + current.endTime) / 2);
+                current.endTime = midpoint;
+                current.duration = current.endTime - current.startTime;
+                next.startTime = midpoint;
+                next.duration = next.endTime - next.startTime;
+                if (current.duration > 0) {
+                    result.push(current);
+                }
+                current = next;
+            }
+            // Trong các trường hợp khác, giữ nguyên đoạn hiện tại
+            else {
+                result.push(current);
+                current = next;
+            }
+        }
+        else {
+            // Không chồng chéo, thêm đoạn hiện tại vào kết quả và tiếp tục với đoạn mới
+            result.push(current);
+            current = next;
+        }
+    }
+    // Thêm đoạn cuối cùng
+    if (current.duration > 0) {
+        result.push(current);
+    }
+    return result;
+}
+/**
+ * Tính toán thống kê giấc ngủ từ các đoạn
+ * @param segments Danh sách các đoạn giấc ngủ
+ * @returns Đối tượng thống kê giấc ngủ
+ */
+function calculateSleepStatistics(segments) {
+    // Giới hạn thời gian ngủ tối đa (57600 giây = 16 giờ)
+    const SLEEP_LIMIT_HIGH = 57600;
+    let deepSleepTotal = 0;
+    let lightSleepTotal = 0;
+    let remTotal = 0;
+    let awakeCount = 0;
+    let totalSleepTime = 0;
+    // Tính tổng thời gian cho từng loại giấc ngủ
+    segments.forEach(segment => {
+        const duration = segment.duration;
+        switch (segment.type) {
+            case SleepType.DEEP_SLEEP:
+                deepSleepTotal += duration;
+                break;
+            case SleepType.LIGHT_SLEEP:
+                lightSleepTotal += duration;
+                break;
+            case SleepType.REM:
+                remTotal += duration;
+                break;
+            case SleepType.AWAKE:
+                awakeCount++;
+                break;
+        }
+    });
+    // Tính tổng thời gian ngủ (không bao gồm thời gian thức giấc)
+    totalSleepTime = deepSleepTotal + lightSleepTotal + remTotal;
+    // Kiểm tra xem thời gian có vượt quá giới hạn không
+    if (totalSleepTime > SLEEP_LIMIT_HIGH) {
+        // Nếu vượt quá, giảm tỷ lệ các loại giấc ngủ
+        const ratio = SLEEP_LIMIT_HIGH / totalSleepTime;
+        deepSleepTotal = Math.floor(deepSleepTotal * ratio);
+        lightSleepTotal = Math.floor(lightSleepTotal * ratio);
+        remTotal = Math.floor(remTotal * ratio);
+        totalSleepTime = deepSleepTotal + lightSleepTotal + remTotal;
+    }
+    return {
+        deepSleepTotal,
+        lightSleepTotal,
+        remTotal,
+        awakeCount,
+        totalSleepTime,
+        deepSleepPercentage: totalSleepTime > 0 ? (deepSleepTotal / totalSleepTime) * 100 : 0,
+        lightSleepPercentage: totalSleepTime > 0 ? (lightSleepTotal / totalSleepTime) * 100 : 0,
+        remPercentage: totalSleepTime > 0 ? (remTotal / totalSleepTime) * 100 : 0
+    };
+}
+/**
+ * Giải mã toàn bộ dữ liệu giấc ngủ từ các gói dữ liệu
+ */
+function decodeSleepData(packets) {
+    let sleepSegments = [];
+    let heartRates = [];
+    let spo2Value = undefined;
+    // Xử lý từng gói dữ liệu
+    for (const packet of packets) {
+        if (packet.length < 3)
+            continue;
+        // Xác định loại gói dữ liệu
+        if (packet[0] === CMD.HEALTH) {
+            if (packet[1] === KEY_Health.HISTORY_SLEEP || packet[1] === KEY_Health.HISTORY_SLEEP_ACK || packet[1] === 0x11) {
+                // Gói dữ liệu chi tiết giấc ngủ (05 04, 05 13, 05 11)
+                sleepSegments = sleepSegments.concat(decodeSleepSegments(packet));
+            }
+            else if (packet[1] === 0x17) {
+                // Gói dữ liệu nhịp tim (05 17)
+                heartRates = heartRates.concat(decodeHeartRateData(packet));
+            }
+            else if (packet[1] === 0x1A) {
+                // Gói dữ liệu SpO2 (05 1A)
+                try {
+                    spo2Value = decodeSpO2Data(packet);
+                }
+                catch (error) {
+                    console.warn("Không thể giải mã dữ liệu SpO2:", error);
+                }
+            }
+        }
+    }
+    // Nếu không có dữ liệu giấc ngủ
+    if (sleepSegments.length === 0) {
+        throw new Error("Không tìm thấy dữ liệu giấc ngủ");
+    }
+    // Sắp xếp các đoạn giấc ngủ theo thời gian
+    sleepSegments.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    // Xử lý các đoạn giấc ngủ chồng chéo hoặc trùng lặp
+    sleepSegments = handleOverlappingSegments(sleepSegments);
+    // Kiểm tra nếu không còn đoạn giấc ngủ hợp lệ sau khi lọc
+    if (sleepSegments.length === 0) {
+        throw new Error("Không tìm thấy đoạn giấc ngủ hợp lệ sau khi lọc");
+    }
+    // Lấy thời gian bắt đầu và kết thúc
+    const startTime = sleepSegments[0].startTime;
+    const endTime = sleepSegments[sleepSegments.length - 1].endTime;
+    // Kiểm tra tính hợp lệ của thời điểm bắt đầu và kết thúc
+    const sleepDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+    if (sleepDuration > MAX_SLEEP_DURATION) {
+        console.warn(`Cảnh báo: Thời gian giữa lúc đi ngủ và thức dậy (${sleepDuration} giây) vượt quá giới hạn cho phép (${MAX_SLEEP_DURATION} giây). Đang giới hạn các đoạn giấc ngủ.`);
+        // Giới hạn thời gian kết thúc không quá 16 giờ sau khi bắt đầu
+        const maxEndTime = new Date(startTime.getTime() + MAX_SLEEP_DURATION * 1000);
+        // Lọc lại các đoạn giấc ngủ nằm trong khoảng thời gian hợp lệ
+        sleepSegments = sleepSegments.filter(segment => segment.startTime <= maxEndTime &&
+            segment.endTime >= startTime);
+        // Cắt ngắn đoạn cuối cùng nếu vượt quá thời gian tối đa
+        if (sleepSegments.length > 0) {
+            const lastSegment = sleepSegments[sleepSegments.length - 1];
+            if (lastSegment.endTime > maxEndTime) {
+                lastSegment.endTime = new Date(maxEndTime);
+                lastSegment.duration = Math.floor((lastSegment.endTime.getTime() - lastSegment.startTime.getTime()) / 1000);
+            }
+        }
+        // Cập nhật lại thời gian kết thúc
+        if (sleepSegments.length > 0) {
+            sleepSegments.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+        }
+        else {
+            throw new Error("Không tìm thấy đoạn giấc ngủ hợp lệ sau khi lọc thời gian");
+        }
+    }
+    // Tính toán lại thời gian bắt đầu và kết thúc sau khi lọc
+    const finalStartTime = sleepSegments[0].startTime;
+    const finalEndTime = sleepSegments[sleepSegments.length - 1].endTime;
+    // Tính toán các thông số giấc ngủ
+    const deepSleepTotal = calculateTotalTime(sleepSegments, SleepType.DEEP_SLEEP);
+    const lightSleepTotal = calculateTotalTime(sleepSegments, SleepType.LIGHT_SLEEP);
+    const remTotal = calculateTotalTime(sleepSegments, SleepType.REM);
+    const wakeDuration = calculateTotalTime(sleepSegments, SleepType.AWAKE);
+    // Đếm số lần các giai đoạn
+    const deepSleepSegments = sleepSegments.filter(s => s.type === SleepType.DEEP_SLEEP);
+    const lightSleepSegments = sleepSegments.filter(s => s.type === SleepType.LIGHT_SLEEP);
+    const awakeSleepSegments = sleepSegments.filter(s => s.type === SleepType.AWAKE);
+    // Tính toán số lần xuất hiện các giai đoạn ngủ
+    let deepSleepCount = deepSleepSegments.length;
+    let lightSleepCount = lightSleepSegments.length;
+    let wakeCount = awakeSleepSegments.length;
+    // Xử lý trường hợp đặc biệt khi deepSleepCount = 65535
+    // Dựa theo file SleepActivity.java, khi deepSleepCount = 65535, wakeCount được xử lý khác biệt
+    const hasSpecialDeepSleepCount = sleepSegments.some(s => s.param === 65535);
+    if (hasSpecialDeepSleepCount) {
+        wakeCount = sleepSegments.length - 1;
+        // Nếu sử dụng BNRHealth, giảm wakeCount xuống 1 đơn vị (theo SleepActivity.java)
+        const isBNRHealth = true; // Cần kiểm tra từ dữ liệu thiết bị
+        if (isBNRHealth && wakeCount > 0) {
+            wakeCount--;
+        }
+    }
+    // Tính tổng thời gian ngủ
+    const totalDuration = deepSleepTotal + lightSleepTotal + remTotal;
+    // Kiểm tra giới hạn tổng thời gian ngủ
+    if (totalDuration > MAX_SLEEP_DURATION) {
+        // Thay vì ném lỗi, ghi nhận cảnh báo và tỷ lệ lại các giai đoạn ngủ
+        console.warn(`Cảnh báo: Tổng thời gian giấc ngủ (${totalDuration} giây) vượt quá giới hạn cho phép (${MAX_SLEEP_DURATION} giây). Đang tỷ lệ lại dữ liệu.`);
+        // Tính toán hệ số tỷ lệ
+        const scaleFactor = MAX_SLEEP_DURATION / totalDuration;
+        // Điều chỉnh các thời gian theo tỷ lệ
+        const adjustedDeepSleepTotal = Math.floor(deepSleepTotal * scaleFactor);
+        const adjustedLightSleepTotal = Math.floor(lightSleepTotal * scaleFactor);
+        const adjustedRemTotal = Math.floor(remTotal * scaleFactor);
+        // Tính lại tổng thời gian
+        const adjustedTotalDuration = adjustedDeepSleepTotal + adjustedLightSleepTotal + adjustedRemTotal;
+        // Trả về dữ liệu đã được điều chỉnh
+        // Định dạng ngày
+        const date = finalStartTime.toISOString().split('T')[0];
+        // Đánh giá chất lượng giấc ngủ
+        const sleepQuality = analyzeSleepQuality(adjustedDeepSleepTotal, adjustedTotalDuration);
+        return {
+            date,
+            startTime: finalStartTime,
+            endTime: finalEndTime,
+            deepSleepTotal: adjustedDeepSleepTotal,
+            lightSleepTotal: adjustedLightSleepTotal,
+            remTotal: adjustedRemTotal,
+            totalDuration: adjustedTotalDuration,
+            deepSleepCount,
+            lightSleepCount,
+            wakeCount,
+            wakeDuration,
+            segments: sleepSegments,
+            heartRates,
+            spo2: spo2Value,
+            sleepQuality
+        };
+    }
+    // Định dạng ngày
+    const date = finalStartTime.toISOString().split('T')[0];
+    // Đánh giá chất lượng giấc ngủ
+    const sleepQuality = analyzeSleepQuality(deepSleepTotal, totalDuration);
+    return {
+        date,
+        startTime: finalStartTime,
+        endTime: finalEndTime,
+        deepSleepTotal,
+        lightSleepTotal,
+        remTotal,
+        totalDuration,
+        deepSleepCount,
+        lightSleepCount,
+        wakeCount,
+        wakeDuration,
+        segments: sleepSegments,
+        heartRates,
+        spo2: spo2Value,
+        sleepQuality
+    };
+}
+/**
+ * Giải mã dữ liệu SpO2 từ gói dữ liệu
+ */
+function decodeSpO2Data(data) {
+    // Kiểm tra gói dữ liệu hợp lệ
+    if (data.length < 5 || data[0] !== CMD.HEALTH || data[1] !== 0x1A) {
+        return undefined;
+    }
+    // Bỏ qua 3 byte đầu tiên (05 1A xx)
+    let offset = 3;
+    // Đọc độ dài dữ liệu (2 bytes)
+    const length = bytesToInt(data, offset, 2);
+    offset += 2;
+    // Kiểm tra độ dài hợp lệ
+    if (length <= 0 || offset + length > data.length) {
+        return undefined;
+    }
+    // Đọc giá trị SpO2 trung bình
+    // Cấu trúc có thể khác nhau tùy thiết bị, giả định giá trị SpO2 ở vị trí offset
+    const spo2Value = data[offset] & 0xFF;
+    // Chỉ trả về giá trị hợp lệ (thường từ 80-100%)
+    if (spo2Value >= 80 && spo2Value <= 100) {
+        return spo2Value;
+    }
+    return undefined;
+}
+/**
+ * Giải mã dữ liệu giấc ngủ trực tiếp từ thiết bị
+ * @param rawData Dữ liệu thô từ thiết bị
+ * @returns Dữ liệu giấc ngủ đã được giải mã
+ */
+function decodeSleepDataFromDevice(rawData) {
+    try {
+        // Chuyển đổi dữ liệu thô thành các gói
+        const packets = [];
+        // Xử lý dữ liệu theo từng gói
+        let offset = 0;
+        while (offset < rawData.length) {
+            // Đảm bảo có ít nhất 3 byte cho header
+            if (offset + 3 > rawData.length)
+                break;
+            // Đọc header của gói
+            const cmd = rawData[offset]; // Byte đầu tiên là command
+            const subcmd = rawData[offset + 1]; // Byte thứ hai là subcommand
+            // Đọc độ dài gói
+            let packetLength = 0;
+            if (offset + 2 < rawData.length) {
+                packetLength = rawData[offset + 2];
+            }
+            // Kiểm tra tính hợp lệ của độ dài gói
+            if (packetLength < 0 || offset + 3 + packetLength > rawData.length) {
+                // Nếu độ dài không hợp lệ, thử tìm gói tiếp theo
+                offset++;
+                continue;
+            }
+            // Tạo gói dữ liệu
+            const packet = rawData.slice(offset, offset + 3 + packetLength);
+            // Thêm gói vào danh sách nếu có ít nhất header
+            if (packet.length >= 3) {
+                packets.push(packet);
+            }
+            // Cập nhật offset để đọc gói tiếp theo
+            offset += 3 + packetLength;
+        }
+        // Giải mã dữ liệu giấc ngủ từ các gói
+        return decodeSleepData(packets);
+    }
+    catch (error) {
+        console.error("Lỗi khi giải mã dữ liệu từ thiết bị:", error);
+        throw error;
+    }
+}
+/**
+ * Chuyển đổi chuỗi hex thành mảng byte
+ * Xử lý các trường hợp đặc biệt như byte âm (-F, -1, etc.) trong log
+ */
+function hexStringToByteArray(hexString) {
+    const byteArray = [];
+    if (!hexString || hexString.trim() === '') {
+        return byteArray;
+    }
+    // Xử lý chuỗi hex có thể có dấu cách, dấu xuống dòng
+    const cleanedHexString = hexString.replace(/\s+/g, ' ').trim();
+    const hexTokens = cleanedHexString.split(' ');
+    for (let token of hexTokens) {
+        try {
+            // Bỏ qua các token trống
+            if (!token || token.trim() === '')
+                continue;
+            // Xử lý byte âm (bắt đầu bằng dấu -)
+            if (token.startsWith('-')) {
+                const valueStr = token.substring(1);
+                // Kiểm tra xem chuỗi có phải là một số hex hợp lệ không
+                if (/^[0-9a-fA-F]+$/.test(valueStr)) {
+                    const value = parseInt(valueStr, 16);
+                    // Chuyển đổi byte âm theo quy tắc Two's complement
+                    // Sử dụng biểu diễn số âm đúng cách hơn
+                    byteArray.push(256 - value);
+                }
+                else {
+                    console.warn(`Token không hợp lệ: ${token}`);
+                }
+            }
+            else {
+                // Kiểm tra xem chuỗi có phải là một số hex hợp lệ không
+                if (/^[0-9a-fA-F]+$/.test(token)) {
+                    const value = parseInt(token, 16);
+                    // Đảm bảo chỉ lấy 8 bit (1 byte)
+                    byteArray.push(value & 0xFF);
+                }
+                else {
+                    console.warn(`Token không hợp lệ: ${token}`);
+                }
+            }
+        }
+        catch (error) {
+            // Bỏ qua các token không phải là số hex hợp lệ
+            console.warn(`Bỏ qua token không hợp lệ: ${token}`, error);
+        }
+    }
+    return byteArray;
+}
+/**
+ * Tách log thành các gói dữ liệu riêng biệt
+ */
+function parsePackets(logData) {
+    const lines = logData.split('\n');
+    const packets = [];
+    for (const line of lines) {
+        // Bỏ qua dòng trống hoặc dòng bắt đầu bằng //
+        if (!line.trim() || line.trim().startsWith('//'))
+            continue;
+        // Chuyển dòng thành byte array
+        const packet = hexStringToByteArray(line);
+        // Thêm vào danh sách gói dữ liệu nếu không rỗng
+        if (packet.length > 0) {
+            packets.push(packet);
+        }
+    }
+    return packets;
+}
+/**
+ * Giải mã dữ liệu giấc ngủ từ log kết nối
+ */
+function decodeSleepDataFromLog(logContent) {
+    // Phân tích log thành các gói dữ liệu
+    const packets = parsePackets(logContent);
+    // Giải mã dữ liệu giấc ngủ
+    return decodeSleepData(packets);
+}
+/**
+ * Định dạng thời gian thành chuỗi "HH:MM"
+ */
+function formatTimeString(date) {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+/**
+ * Hiển thị báo cáo giấc ngủ ở định dạng dễ đọc
+ */
+function generateSleepReport(sleepData) {
+    // Định dạng thời gian
+    const startTimeStr = formatTimeString(sleepData.startTime);
+    const endTimeStr = formatTimeString(sleepData.endTime);
+    // Định dạng thời gian ngủ sâu
+    const deepSleepHours = Math.floor(sleepData.deepSleepTotal / 3600);
+    const deepSleepMinutes = Math.floor((sleepData.deepSleepTotal % 3600) / 60);
+    // Định dạng thời gian ngủ nhẹ
+    const lightSleepHours = Math.floor(sleepData.lightSleepTotal / 3600);
+    const lightSleepMinutes = Math.floor((sleepData.lightSleepTotal % 3600) / 60);
+    // Định dạng thời gian REM
+    const remHours = Math.floor(sleepData.remTotal / 3600);
+    const remMinutes = Math.floor((sleepData.remTotal % 3600) / 60);
+    // Định dạng tổng thời gian ngủ
+    const totalHours = Math.floor(sleepData.totalDuration / 3600);
+    const totalMinutes = Math.floor((sleepData.totalDuration % 3600) / 60);
+    // Xác định AM/PM cho thời gian đi ngủ và thức dậy
+    const startTimePeriod = sleepData.startTime.getHours() < 12 ? "AM" : "PM";
+    const endTimePeriod = sleepData.endTime.getHours() < 12 ? "AM" : "PM";
+    // Định dạng ngày tháng theo chuẩn Việt Nam
+    const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+    });
+    const localDate = dateFormatter.format(sleepData.startTime);
+    let report = `
+=== BÁO CÁO GIẤC NGỦ ===
+Ngày: ${localDate}
+Giờ đi ngủ: ${startTimeStr} ${startTimePeriod}
+Giờ thức dậy: ${endTimeStr} ${endTimePeriod}
+Tổng thời gian ngủ: ${totalHours}h ${totalMinutes}p
+
+Ngủ sâu: ${deepSleepHours}h ${deepSleepMinutes}p (${Math.round(sleepData.deepSleepTotal * 100 / sleepData.totalDuration)}%)
+Ngủ nhẹ: ${lightSleepHours}h ${lightSleepMinutes}p (${Math.round(sleepData.lightSleepTotal * 100 / sleepData.totalDuration)}%)
+REM: ${remHours}h ${remMinutes}p (${Math.round(sleepData.remTotal * 100 / sleepData.totalDuration)}%)
+`;
+    // Thêm bảng chi tiết các giai đoạn giấc ngủ
+    report += `
+===== CHI TIẾT CÁC GIAI ĐOẠN GIẤC NGỦ =====
+`;
+    // Tạo bảng với các cột: Bắt đầu, Kết thúc, Thời lượng, Loại
+    report += "\nBắt đầu | Kết thúc | Thời lượng | Loại giấc ngủ\n";
+    report += "--------|----------|------------|-------------\n";
+    for (const segment of sleepData.segments) {
+        const start = formatTimeString(segment.startTime);
+        const end = formatTimeString(segment.endTime);
+        const duration = formatDuration(segment.duration);
+        let type = "";
+        switch (segment.type) {
+            case SleepType.DEEP_SLEEP:
+                type = "Ngủ sâu";
+                break;
+            case SleepType.LIGHT_SLEEP:
+                type = "Ngủ nhẹ";
+                break;
+            case SleepType.REM:
+                type = "REM";
+                break;
+            case SleepType.AWAKE:
+                type = "Thức giấc";
+                break;
+            default:
+                type = "Không xác định";
+        }
+        report += `${start} | ${end} | ${duration} | ${type}\n`;
+    }
+    // Thêm thông tin nhịp tim nếu có
+    if (sleepData.heartRates && sleepData.heartRates.length > 0) {
+        const avgHeartRate = sleepData.heartRates.reduce((sum, hr) => sum + hr.heartRate, 0) / sleepData.heartRates.length;
+        const maxHeartRate = Math.max(...sleepData.heartRates.map(hr => hr.heartRate));
+        const minHeartRate = Math.min(...sleepData.heartRates.map(hr => hr.heartRate));
+        report += `
+===== NHỊP TIM TRONG KHI NGỦ =====
+Nhịp tim trung bình: ${avgHeartRate.toFixed(0)} BPM
+Nhịp tim cao nhất: ${maxHeartRate} BPM
+Nhịp tim thấp nhất: ${minHeartRate} BPM
+`;
+    }
+    // Thêm thông tin SpO2 nếu có
+    if (sleepData.spo2) {
+        report += `
+===== SpO2 TRONG KHI NGỦ =====
+SpO2 trung bình: ${sleepData.spo2}%
+`;
+    }
+    // Đánh giá chất lượng giấc ngủ
+    report += `
+===== ĐÁNH GIÁ CHẤT LƯỢNG GIẤC NGỦ =====
+`;
+    // Kiểm tra thuộc tính sleepQuality tồn tại trước khi sử dụng
+    if (sleepData.sleepQuality !== undefined) {
+        if (sleepData.sleepQuality >= 3.0) {
+            report += "Giấc ngủ bình thường";
+        }
+        else if (sleepData.sleepQuality > 0.0) {
+            report += "Thiếu ngủ";
+        }
+        else {
+            report += "Không xác định";
+        }
+    }
+    else {
+        report += "Không có đủ dữ liệu để đánh giá chất lượng giấc ngủ";
+    }
+    // Thêm các khuyến nghị về giấc ngủ
+    report += `
+    
+===== KHUYẾN NGHỊ =====
+`;
+    // Phân tích và đưa ra khuyến nghị dựa trên dữ liệu
+    if (sleepData.totalDuration < 6 * 3600) {
+        report += "- Thời gian ngủ của bạn dưới 6 tiếng, không đủ cho sức khỏe tốt. Hãy cố gắng ngủ 7-8 tiếng mỗi đêm.\n";
+    }
+    if (sleepData.deepSleepTotal < 0.15 * sleepData.totalDuration) {
+        report += "- Thời gian ngủ sâu thấp. Hạn chế caffein, rượu bia và tăng cường tập thể dục ban ngày để cải thiện chất lượng ngủ sâu.\n";
+    }
+    if (sleepData.wakeCount > 3) {
+        report += "- Bạn thức giấc khá nhiều lần. Hãy đảm bảo không gian ngủ yên tĩnh, thoải mái và tối.\n";
+    }
+    if (sleepData.startTime.getHours() >= 1 && sleepData.startTime.getHours() < 6) {
+        report += "- Thời điểm đi ngủ không lý tưởng. Cố gắng đi ngủ trước 11 giờ đêm để tận dụng nhịp sinh học tự nhiên.\n";
+    }
+    return report;
+}
+// Ví dụ sử dụng:
+/*
+import { readFileSync } from 'fs';
+import { decodeSleepDataFromLog, generateSleepReport } from './sleep_decoder';
+
+try {
+    // Đọc nội dung từ file log-connect.txt
+    const logContent = readFileSync('log-connect.txt', 'utf8');
+    
+    // Giải mã dữ liệu giấc ngủ
+    const sleepData = decodeSleepDataFromLog(logContent);
+    
+    // Tạo báo cáo giấc ngủ
+    const report = generateSleepReport(sleepData);
+    
+    // Hiển thị báo cáo
+    console.log(report);
+} catch (error) {
+    console.error('Lỗi:', error.message);
+}
+*/
+/**
+ * Tách và nhận diện các gói dữ liệu từ file log
+ * @param logContent Nội dung file log
+ * @returns Danh sách các gói dữ liệu đã xử lý
+ */
+function extractPacketsFromLog(logContent) {
+    const packets = [];
+    const lines = logContent.split('\n');
+    // Biểu thức chính quy để tìm dữ liệu nhận được từ nhẫn
+    const receiveRegex = /Received data from device|Nhận dữ liệu từ thiết bị|Connected:.*: ([\da-fA-F\s-]+)/;
+    let currentPacket = [];
+    for (const line of lines) {
+        // Kiểm tra xem dòng có chứa dữ liệu nhận được không
+        const receiveMatch = line.match(receiveRegex);
+        if (receiveMatch && receiveMatch[1]) {
+            // Lấy dữ liệu hex từ kết quả tìm kiếm
+            const hexData = receiveMatch[1].trim();
+            // Chuyển đổi chuỗi hex thành mảng byte
+            const byteArray = hexStringToByteArray(hexData);
+            // Nếu dữ liệu có ít nhất 3 byte (cmd, subcmd, flags), lưu lại gói
+            if (byteArray.length >= 3) {
+                packets.push(byteArray);
+            }
+        }
+        // Kiểm tra các dòng chứa dữ liệu đơn thuần (không có tiền tố "Received")
+        else if (/^[\da-fA-F\s-]+$/.test(line.trim())) {
+            const hexData = line.trim();
+            const byteArray = hexStringToByteArray(hexData);
+            if (byteArray.length >= 3) {
+                packets.push(byteArray);
+            }
+        }
+    }
+    return packets.filter(packet => packet.length > 0);
+}
+/**
+ * Giải mã dữ liệu giấc ngủ từ nội dung file log
+ * @param logContent Nội dung file log
+ * @returns Dữ liệu giấc ngủ đã được giải mã
+ */
+function decodeSleepDataFromLog(logContent) {
+    try {
+        // Trích xuất các gói dữ liệu từ log
+        const packets = extractPacketsFromLog(logContent);
+        if (packets.length === 0) {
+            throw new Error("Không tìm thấy gói dữ liệu hợp lệ trong log");
+        }
+        console.log(`Tìm thấy ${packets.length} gói dữ liệu trong log`);
+        // Lọc ra các gói dữ liệu liên quan đến sleep (cmd = 5)
+        const sleepPackets = packets.filter(packet => packet[0] === CMD.HEALTH);
+        if (sleepPackets.length === 0) {
+            throw new Error("Không tìm thấy gói dữ liệu giấc ngủ trong log");
+        }
+        console.log(`Tìm thấy ${sleepPackets.length} gói dữ liệu giấc ngủ trong log`);
+        // Giải mã dữ liệu giấc ngủ
+        return decodeSleepData(sleepPackets);
+    }
+    catch (error) {
+        console.error("Lỗi khi giải mã dữ liệu từ log:", error);
+        throw error;
+    }
+}
+/**
+ * Tạo báo cáo giấc ngủ dựa trên dữ liệu từ file log
+ * @param logFilePath Đường dẫn đến file log
+ * @param outputFilePath Đường dẫn đến file kết quả (tùy chọn)
+ * @returns Báo cáo giấc ngủ dưới dạng chuỗi
+ */
+async function generateSleepReportFromLog(logFilePath, outputFilePath) {
+    try {
+        // Import fs để đọc/ghi file (chỉ sử dụng khi chạy trong Node.js)
+        const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+        // Đọc nội dung file log
+        const logContent = fs.readFileSync(logFilePath, 'utf8');
+        // Giải mã dữ liệu giấc ngủ
+        const sleepData = decodeSleepDataFromLog(logContent);
+        // Tạo báo cáo
+        const report = generateSleepReport(sleepData);
+        // Ghi kết quả ra file nếu có chỉ định
+        if (outputFilePath) {
+            fs.writeFileSync(outputFilePath, report, 'utf8');
+            console.log(`Đã ghi báo cáo vào file ${outputFilePath}`);
+        }
+        return report;
+    }
+    catch (error) {
+        console.error(`Lỗi khi tạo báo cáo giấc ngủ từ file ${logFilePath}:`, error);
+        throw error;
+    }
+}
+/**
+ * Giải mã dữ liệu SpO2 từ gói dữ liệu
+ * Mã lệnh SPO2: 05 1A
+ * @param packet Mảng byte chứa dữ liệu SpO2
+ * @returns Giá trị SpO2 (%)
+ */
+function decodeSpo2Data(packet) {
+    try {
+        if (packet.length < 7 || packet[0] !== CMD.HEALTH || packet[1] !== 0x1A) {
+            return null;
+        }
+        // Vị trí dữ liệu SpO2 (byte thứ 5)
+        const spo2Value = packet[5];
+        // SpO2 hợp lệ thường nằm trong khoảng 90-100%
+        if (spo2Value >= 0 && spo2Value <= 100) {
+            return spo2Value;
+        }
+        return null;
+    }
+    catch (error) {
+        console.error("Lỗi khi giải mã dữ liệu SpO2:", error);
+        return null;
+    }
+}
+/**
+ * Giải mã dữ liệu nhịp tim chi tiết từ gói dữ liệu
+ * Mã lệnh nhịp tim: 05 17
+ * @param packet Mảng byte chứa dữ liệu nhịp tim
+ * @returns Danh sách các bản ghi nhịp tim với thời gian
+ */
+function decodeHeartRateData(packet) {
+    try {
+        if (packet.length < 8 || packet[0] !== CMD.HEALTH || packet[1] !== 0x17) {
+            return [];
+        }
+        const heartRates = [];
+        let position = 4;
+        // Từng cặp timestamp + nhịp tim
+        while (position + 8 <= packet.length) {
+            // 4 byte timestamp
+            const timestamp = extractTimestamp(packet, position);
+            if (!timestamp) {
+                position += 4;
+                continue;
+            }
+            position += 4;
+            // Thường có 1 byte flags (01) trước dữ liệu nhịp tim
+            const flags = packet[position++];
+            // Lấy giá trị nhịp tim (dạng BPM)
+            const heartRate = packet[position++];
+            // Nhịp tim hợp lệ nằm trong khoảng 30-200 BPM
+            if (heartRate >= 30 && heartRate <= 200) {
+                heartRates.push({
+                    timestamp: new Date(timestamp * 1000),
+                    heartRate
+                });
+            }
+            // Bỏ qua byte dữ liệu không xác định (nếu có)
+            position++;
+        }
+        return heartRates;
+    }
+    catch (error) {
+        console.error("Lỗi khi giải mã dữ liệu nhịp tim:", error);
+        return [];
+    }
+}
+/**
+ * Tính toán chỉ số sức khỏe dựa trên dữ liệu giấc ngủ
+ * @param sleepData Dữ liệu giấc ngủ đã được giải mã
+ * @returns Chỉ số sức khỏe (0-100)
+ */
+function calculateHealthScore(sleepData) {
+    let score = 70; // Điểm mặc định
+    // Đánh giá dựa trên tổng thời gian ngủ
+    // Lý tưởng: 7-9 giờ (25200-32400 giây)
+    const totalDurationHours = sleepData.totalDuration / 3600;
+    if (totalDurationHours >= 7 && totalDurationHours <= 9) {
+        score += 10;
+    }
+    else if (totalDurationHours >= 6 && totalDurationHours < 7) {
+        score += 5;
+    }
+    else if (totalDurationHours < 6) {
+        score -= 10;
+    }
+    else if (totalDurationHours > 9) {
+        score -= 5;
+    }
+    // Đánh giá dựa trên tỷ lệ giấc ngủ sâu
+    // Lý tưởng: 20-25% tổng giấc ngủ
+    const deepSleepPercentage = (sleepData.deepSleepTotal / sleepData.totalDuration) * 100;
+    if (deepSleepPercentage >= 20 && deepSleepPercentage <= 25) {
+        score += 10;
+    }
+    else if (deepSleepPercentage >= 15 && deepSleepPercentage < 20) {
+        score += 5;
+    }
+    else if (deepSleepPercentage < 15) {
+        score -= 10;
+    }
+    // Đánh giá dựa trên tỷ lệ REM
+    // Lý tưởng: 20-25% tổng giấc ngủ
+    const remPercentage = (sleepData.remTotal / sleepData.totalDuration) * 100;
+    if (remPercentage >= 20 && remPercentage <= 25) {
+        score += 10;
+    }
+    else if (remPercentage >= 15 && remPercentage < 20) {
+        score += 5;
+    }
+    else if (remPercentage < 15) {
+        score -= 5;
+    }
+    // Đánh giá dựa trên số lần thức giấc
+    if (sleepData.wakeCount <= 1) {
+        score += 10;
+    }
+    else if (sleepData.wakeCount <= 3) {
+        score += 5;
+    }
+    else if (sleepData.wakeCount > 5) {
+        score -= 10;
+    }
+    // Đánh giá dựa trên SpO2
+    if (sleepData.spo2) {
+        if (sleepData.spo2 >= 95) {
+            score += 5;
+        }
+        else if (sleepData.spo2 >= 90 && sleepData.spo2 < 95) {
+            // OK, không cộng điểm
+        }
+        else {
+            score -= 10;
+        }
+    }
+    // Giới hạn điểm từ 0-100
+    return Math.max(0, Math.min(100, Math.round(score)));
+}
+/**
+ * Cải thiện bản báo cáo giấc ngủ với thêm chỉ số sức khỏe
+ * @param sleepData Dữ liệu giấc ngủ đã được giải mã
+ * @returns Báo cáo giấc ngủ dưới dạng chuỗi
+ */
+function generateSleepReport(sleepData) {
+    // Tính toán chỉ số sức khỏe
+    const healthScore = calculateHealthScore(sleepData);
+    // Tạo báo cáo cơ bản
+    let report = `=== BÁO CÁO GIẤC NGỦ ===\n\n`;
+    report += `Ngày: ${sleepData.date}\n`;
+    report += `Thời gian đi ngủ: ${sleepData.startTime.toLocaleString()}\n`;
+    report += `Thời gian thức dậy: ${sleepData.endTime.toLocaleString()}\n`;
+    report += `Tổng thời gian ngủ: ${formatDuration(sleepData.totalDuration)}\n\n`;
+    report += `--- Chi tiết các giai đoạn giấc ngủ ---\n`;
+    report += `Ngủ sâu (Deep Sleep): ${formatDuration(sleepData.deepSleepTotal)} (${Math.round(sleepData.deepSleepTotal * 100 / sleepData.totalDuration)}%)\n`;
+    report += `Ngủ nhẹ (Light Sleep): ${formatDuration(sleepData.lightSleepTotal)} (${Math.round(sleepData.lightSleepTotal * 100 / sleepData.totalDuration)}%)\n`;
+    report += `REM: ${formatDuration(sleepData.remTotal)} (${Math.round(sleepData.remTotal * 100 / sleepData.totalDuration)}%)\n`;
+    report += `Số lần thức giấc: ${sleepData.wakeCount}\n\n`;
+    // Thêm thông tin nhịp tim
+    if (sleepData.heartRates && sleepData.heartRates.length > 0) {
+        const avgHeartRate = sleepData.heartRates.reduce((sum, hr) => sum + hr.heartRate, 0) / sleepData.heartRates.length;
+        const maxHeartRate = Math.max(...sleepData.heartRates.map(hr => hr.heartRate));
+        const minHeartRate = Math.min(...sleepData.heartRates.map(hr => hr.heartRate));
+        report += `--- Thông tin nhịp tim ---\n`;
+        report += `Nhịp tim trung bình: ${avgHeartRate.toFixed(0)} BPM\n`;
+        report += `Nhịp tim cao nhất: ${maxHeartRate} BPM\n`;
+        report += `Nhịp tim thấp nhất: ${minHeartRate} BPM\n\n`;
+    }
+    // Thêm thông tin SpO2
+    if (sleepData.spo2) {
+        report += `--- Thông tin SpO2 ---\n`;
+        report += `SpO2 trung bình: ${sleepData.spo2}%\n\n`;
+    }
+    // Thêm đánh giá chất lượng giấc ngủ
+    report += `--- Đánh giá chất lượng giấc ngủ ---\n`;
+    report += `Điểm chất lượng giấc ngủ: ${healthScore}/100\n`;
+    // Thêm nhận xét dựa trên điểm
+    if (healthScore >= 90) {
+        report += `Nhận xét: Giấc ngủ xuất sắc! Bạn đã có một đêm ngủ rất tốt.\n`;
+    }
+    else if (healthScore >= 80) {
+        report += `Nhận xét: Giấc ngủ tốt. Bạn đã ngủ khá ngon.\n`;
+    }
+    else if (healthScore >= 70) {
+        report += `Nhận xét: Giấc ngủ đạt yêu cầu. Có thể cải thiện thêm.\n`;
+    }
+    else if (healthScore >= 50) {
+        report += `Nhận xét: Giấc ngủ trung bình. Cần cải thiện chế độ nghỉ ngơi.\n`;
+    }
+    else {
+        report += `Nhận xét: Giấc ngủ kém. Cần cải thiện đáng kể chất lượng giấc ngủ.\n`;
+    }
+    // Thêm một số lời khuyên
+    report += `\n--- Lời khuyên ---\n`;
+    if (sleepData.totalDuration < 25200) { // Dưới 7 giờ
+        report += `- Bạn nên ngủ nhiều hơn, thời gian ngủ lý tưởng là 7-9 giờ mỗi đêm.\n`;
+    }
+    if (sleepData.deepSleepTotal * 100 / sleepData.totalDuration < 15) {
+        report += `- Tỷ lệ giấc ngủ sâu của bạn thấp. Hãy tránh caffeine vào buổi tối và tạo môi trường ngủ yên tĩnh.\n`;
+    }
+    if (sleepData.wakeCount > 3) {
+        report += `- Bạn thức giấc nhiều lần trong đêm. Hãy kiểm tra môi trường ngủ và giảm ánh sáng xanh trước khi đi ngủ.\n`;
+    }
+    if (sleepData.spo2 && sleepData.spo2 < 95) {
+        report += `- SpO2 của bạn hơi thấp. Hãy đảm bảo thông gió tốt trong phòng ngủ và tham khảo ý kiến bác sĩ nếu tình trạng kéo dài.\n`;
+    }
+    return report;
+}
+/**
+ * Định dạng thời lượng từ giây sang chuỗi giờ:phút
+ * @param seconds Thời lượng tính bằng giây
+ * @returns Chuỗi định dạng "Xh Yp"
+ */
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+        return `${hours}h ${minutes}p`;
+    }
+    else {
+        return `${minutes}p`;
+    }
+}
+/**
+ * Trích xuất timestamp từ mảng byte
+ * @param data Mảng byte dữ liệu
+ * @param offset Vị trí bắt đầu
+ * @returns Timestamp dạng Unix (giây)
+ */
+function extractTimestamp(data, offset) {
+    try {
+        // Đảm bảo đủ byte để đọc timestamp
+        if (offset + 3 >= data.length) {
+            return null;
+        }
+        // Format timestamp: 4 byte, little-endian
+        // Ví dụ: [0x5A, 0x74, 0x2F, 0x01] -> 0x012F745A
+        const timestamp = ((data[offset + 3] & 0xFF) << 24 |
+            (data[offset + 2] & 0xFF) << 16 |
+            (data[offset + 1] & 0xFF) << 8 |
+            (data[offset] & 0xFF));
+        // Kiểm tra timestamp hợp lệ (từ năm 2020 đến 2030)
+        const minTimestamp = new Date('2020-01-01').getTime() / 1000;
+        const maxTimestamp = new Date('2030-01-01').getTime() / 1000;
+        return (timestamp >= minTimestamp && timestamp <= maxTimestamp) ? timestamp : null;
+    }
+    catch (error) {
+        console.error("Lỗi khi trích xuất timestamp:", error);
+        return null;
+    }
+}

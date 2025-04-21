@@ -1,0 +1,267 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateSleepReportFromLog = exports.generateSleepReport = exports.decodeSleepDataFromLog = void 0;
+const fs_1 = require("fs");
+const sleep_decoder_1 = require("./sleep_decoder");
+Object.defineProperty(exports, "decodeSleepDataFromLog", { enumerable: true, get: function () { return sleep_decoder_1.decodeSleepDataFromLog; } });
+Object.defineProperty(exports, "generateSleepReport", { enumerable: true, get: function () { return sleep_decoder_1.generateSleepReport; } });
+Object.defineProperty(exports, "generateSleepReportFromLog", { enumerable: true, get: function () { return sleep_decoder_1.generateSleepReportFromLog; } });
+// Các mẫu dữ liệu byte từ giao tiếp với nhẫn thông minh
+// Mã lệnh yêu cầu dữ liệu giấc ngủ - Cmd: 05 04
+const requestPacket = `05 04 06 00 1d 4e`;
+// Mã phản hồi từ nhẫn thông minh - Cmd: 05 04
+const responsePacket = `05 04 10 00 01 00 01 00 00 00 64 00 00 00 68 44`;
+// Dữ liệu chi tiết về các đoạn giấc ngủ - Mã lệnh 05 11
+const sleepDetailsPacket = `05 11 3e 00 58 74 74 2f 50 6d 74 2f 52 00 34 00 03 00 50 6d 74 2f 48 66 74 2f 3d 00 31 00 02 00 48 66 74 2f 40 5f 74 2f 1f 00 13 00 01 00 40 5f 74 2f 38 58 74 2f 37 00 22 00 02 00 59 32`;
+// Dữ liệu nhịp tim trong khi ngủ - Mã lệnh 05 17
+const heartRatePacket = `05 17 4e 00 3e 6d 74 2f 01 72 4c 59 33 66 74 2f 01 6e 49 46 17 5f 74 2f 01 6b 46 3c 17 58 74 2f 01 6b 48 45 10 51 74 2f 01 80 53 72 -d 4a 74 2f 01 69 45 3c 0a 42 74 2f 01 74 4e 5f 12 3b 74`;
+// Dữ liệu bổ sung về giấc ngủ - Mã lệnh 05 13
+const additionalSleepPacket = `05 13 5e 00 51 -6 64 00 04 5a 74 2f 15 2e 74 2f -1 -1 56 04 68 0c -e 1a -e 04 5a 74 2f 0f 05 00 -f 14 55 74 2f -2 00 00 -d 13 54 74 2f 44 00 00 -e 30 54 74 2f 11 04 00 -f 40 4f 74 2f 25 01`;
+// Dữ liệu thống kê về giấc ngủ - Mã lệnh 05 15
+const sleepStatisticsPacket = `05 15 3c 00 3e 6d 74 2f 00 59 33 66 74 2f 00 46 17 5f 74 2f 00 3c 17 58 74 2f 00 45 10 51 74 2f 00 72 -d 4a 74 2f 00 3c 0a 42 74 2f 00 5f 12 3b 74 2f 00 43 0a 34 74 2f 00 44 73 7e`;
+// Dữ liệu chi tiết bổ sung - Mã lệnh 05 18
+const additionalDetailsPacket = `05 18 5a 00 3e 6d 74 2f 52 00 59 72 4c 62 12 28 03 00 0f 00 00 00 60 21 33 66 74 2f 71 00 46 6e 49 62 0e 2a 02 00 0f 00 00 00 06 29 17 5f 74 2f 52 00 3c 6b 46 60 0c 25 06 00 0f 00 00 00 21`;
+// Dữ liệu SpO2 - Mã lệnh 05 1A
+const spo2Packet = `05 1A 08 00 5A 74 2F 01 97 00 00 54`;
+// Ghép tất cả các gói dữ liệu thành một chuỗi log hoàn chỉnh để test
+const sampleLogData = `
+// Yêu cầu dữ liệu giấc ngủ từ nhẫn
+Sent command to device: ${requestPacket}
+
+// Phản hồi với thông tin tổng quan về dữ liệu giấc ngủ
+Received data from device: ${responsePacket}
+
+// Dữ liệu chi tiết về các đoạn giấc ngủ
+Received data from device: ${sleepDetailsPacket}
+
+// Dữ liệu nhịp tim trong khi ngủ
+Received data from device: ${heartRatePacket}
+
+// Dữ liệu bổ sung về giấc ngủ
+Received data from device: ${additionalSleepPacket}
+
+// Dữ liệu thống kê về giấc ngủ
+Received data from device: ${sleepStatisticsPacket}
+
+// Dữ liệu chi tiết bổ sung
+Received data from device: ${additionalDetailsPacket}
+
+// Dữ liệu SpO2
+Received data from device: ${spo2Packet}
+`;
+/**
+ * Hàm chính để xử lý dữ liệu giấc ngủ
+ * Có thể chỉ định đường dẫn file log làm tham số dòng lệnh
+ * hoặc sử dụng data mẫu để kiểm tra chức năng
+ */
+async function main() {
+    var _a, _b;
+    try {
+        console.log("===== BỘ GIẢI MÃ DỮ LIỆU GIẤC NGỦ CHO NHẪN THÔNG MINH =====");
+        // Kiểm tra tham số dòng lệnh
+        let logContent = '';
+        let useTestData = false;
+        // Đọc tham số dòng lệnh
+        const args = process.argv.slice(2);
+        // Xử lý các tùy chọn dòng lệnh
+        const flagOptions = {
+            useTestData: false,
+            outputPath: 'sleep-report.txt',
+            verbose: false,
+            analyze: false,
+        };
+        for (let i = 0; i < args.length; i++) {
+            if (args[i] === '--test' || args[i] === '-t') {
+                flagOptions.useTestData = true;
+            }
+            else if ((args[i] === '--output' || args[i] === '-o') && i + 1 < args.length) {
+                flagOptions.outputPath = args[++i];
+            }
+            else if (args[i] === '--verbose' || args[i] === '-v') {
+                flagOptions.verbose = true;
+            }
+            else if (args[i] === '--analyze' || args[i] === '-a') {
+                flagOptions.analyze = true;
+            }
+        }
+        // Lấy đường dẫn file log từ tham số nếu có
+        const logPath = args.length > 0 && !args[0].startsWith('-') ? args[0] : 'log-connect.txt';
+        if (flagOptions.useTestData) {
+            console.log("Sử dụng dữ liệu mẫu để kiểm tra chức năng...");
+            logContent = sampleLogData;
+        }
+        else {
+            console.log(`Đọc dữ liệu từ file: ${logPath}`);
+            try {
+                logContent = (0, fs_1.readFileSync)(logPath, 'utf8');
+            }
+            catch (err) {
+                console.error(`Không thể đọc file ${logPath}. Sử dụng dữ liệu mẫu thay thế.`);
+                logContent = sampleLogData;
+                useTestData = true;
+            }
+        }
+        // Giải mã dữ liệu giấc ngủ
+        console.log("Đang giải mã dữ liệu...");
+        const sleepData = (0, sleep_decoder_1.decodeSleepDataFromLog)(logContent);
+        // Hiển thị thông tin cơ bản
+        console.log(`\nĐã tìm thấy dữ liệu giấc ngủ cho ngày: ${sleepData.date}`);
+        console.log(`Thời gian đi ngủ: ${sleepData.startTime.toLocaleTimeString()}`);
+        console.log(`Thời gian thức dậy: ${sleepData.endTime.toLocaleTimeString()}`);
+        console.log(`Tổng thời gian ngủ: ${Math.floor(sleepData.totalDuration / 3600)}h ${Math.floor((sleepData.totalDuration % 3600) / 60)}p`);
+        // Chi tiết về các giai đoạn giấc ngủ
+        console.log(`\n--- Chi tiết các giai đoạn giấc ngủ ---`);
+        console.log(`Ngủ sâu: ${Math.floor(sleepData.deepSleepTotal / 3600)}h ${Math.floor((sleepData.deepSleepTotal % 3600) / 60)}p (${Math.round(sleepData.deepSleepTotal * 100 / sleepData.totalDuration)}%)`);
+        console.log(`Ngủ nhẹ: ${Math.floor(sleepData.lightSleepTotal / 3600)}h ${Math.floor((sleepData.lightSleepTotal % 3600) / 60)}p (${Math.round(sleepData.lightSleepTotal * 100 / sleepData.totalDuration)}%)`);
+        console.log(`REM: ${Math.floor(sleepData.remTotal / 3600)}h ${Math.floor((sleepData.remTotal % 3600) / 60)}p (${Math.round(sleepData.remTotal * 100 / sleepData.totalDuration)}%)`);
+        console.log(`Số lần thức giấc: ${sleepData.wakeCount}`);
+        // Hiển thị thông tin nhịp tim nếu có
+        if (sleepData.heartRates && sleepData.heartRates.length > 0) {
+            const avgHeartRate = sleepData.heartRates.reduce((sum, hr) => sum + hr.heartRate, 0) / sleepData.heartRates.length;
+            const maxHeartRate = Math.max(...sleepData.heartRates.map(hr => hr.heartRate));
+            const minHeartRate = Math.min(...sleepData.heartRates.map(hr => hr.heartRate));
+            console.log(`\n--- Thông tin nhịp tim ---`);
+            console.log(`Nhịp tim trung bình: ${avgHeartRate.toFixed(0)} BPM`);
+            console.log(`Nhịp tim cao nhất: ${maxHeartRate} BPM`);
+            console.log(`Nhịp tim thấp nhất: ${minHeartRate} BPM`);
+        }
+        // Hiển thị thông tin SpO2 nếu có
+        if (sleepData.spo2) {
+            console.log(`\n--- Thông tin SpO2 ---`);
+            console.log(`SpO2 trung bình: ${sleepData.spo2}%`);
+        }
+        // Tính toán và hiển thị chỉ số sức khỏe
+        const healthScore = (0, sleep_decoder_1.calculateHealthScore)(sleepData);
+        console.log(`\n--- Chỉ số sức khỏe ---`);
+        console.log(`Điểm chất lượng giấc ngủ: ${healthScore}/100`);
+        // Hiển thị thêm phân tích chi tiết nếu có tùy chọn --analyze
+        if (flagOptions.analyze) {
+            console.log("\n--- Phân tích chi tiết các đoạn giấc ngủ ---");
+            let currentType = -1;
+            let currentSegmentStart = new Date();
+            let currentDuration = 0;
+            // Sắp xếp các đoạn giấc ngủ theo thời gian
+            const sortedSegments = [...sleepData.segments].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+            for (const segment of sortedSegments) {
+                if (segment.type !== currentType) {
+                    if (currentType !== -1) {
+                        console.log(`${formatSleepType(currentType)}: Từ ${currentSegmentStart.toLocaleTimeString()} - Thời lượng: ${Math.floor(currentDuration / 60)}p`);
+                    }
+                    currentType = segment.type;
+                    currentSegmentStart = segment.startTime;
+                    currentDuration = segment.duration;
+                }
+                else {
+                    currentDuration += segment.duration;
+                }
+            }
+            // In đoạn cuối cùng
+            if (currentType !== -1) {
+                console.log(`${formatSleepType(currentType)}: Từ ${currentSegmentStart.toLocaleTimeString()} - Thời lượng: ${Math.floor(currentDuration / 60)}p`);
+            }
+            // Hiển thị chi tiết nhịp tim theo giờ nếu có
+            if (sleepData.heartRates && sleepData.heartRates.length > 0) {
+                console.log("\n--- Nhịp tim theo giờ ---");
+                // Nhóm nhịp tim theo giờ
+                const heartRatesByHour = new Map();
+                for (const hr of sleepData.heartRates) {
+                    const hourKey = hr.timestamp.getHours().toString().padStart(2, '0');
+                    if (!heartRatesByHour.has(hourKey)) {
+                        heartRatesByHour.set(hourKey, []);
+                    }
+                    (_a = heartRatesByHour.get(hourKey)) === null || _a === void 0 ? void 0 : _a.push(hr.heartRate);
+                }
+                // Hiển thị nhịp tim trung bình theo từng giờ
+                const hours = Array.from(heartRatesByHour.keys()).sort();
+                for (const hour of hours) {
+                    const rates = heartRatesByHour.get(hour) || [];
+                    const avg = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+                    console.log(`${hour}:00 - ${hour}:59: ${avg.toFixed(0)} BPM`);
+                }
+            }
+        }
+        // Hiển thị dữ liệu gốc nếu có tùy chọn --verbose
+        if (flagOptions.verbose) {
+            console.log("\n--- Dữ liệu gốc ---");
+            console.log("Số lượng đoạn giấc ngủ:", sleepData.segments.length);
+            console.log("Số lượng đo nhịp tim:", ((_b = sleepData.heartRates) === null || _b === void 0 ? void 0 : _b.length) || 0);
+            if (sleepData.rawData) {
+                console.log("\nCác gói dữ liệu đã giải mã:");
+                for (const [key, value] of Object.entries(sleepData.rawData)) {
+                    console.log(`${key}: ${JSON.stringify(value)}`);
+                }
+            }
+        }
+        // Tạo báo cáo giấc ngủ
+        console.log("\nĐang tạo báo cáo chi tiết...");
+        const report = (0, sleep_decoder_1.generateSleepReport)(sleepData);
+        // Lưu báo cáo vào file
+        const reportPath = flagOptions.outputPath;
+        (0, fs_1.writeFileSync)(reportPath, report, 'utf8');
+        console.log(`Đã lưu báo cáo giấc ngủ vào file: ${reportPath}`);
+        // Hiển thị tên file nguồn dữ liệu
+        if (useTestData || flagOptions.useTestData) {
+            console.log("\nLưu ý: Báo cáo được tạo từ dữ liệu mẫu, không phải dữ liệu thực tế từ nhẫn.");
+        }
+        else {
+            console.log(`\nBáo cáo đã được tạo từ file log: ${logPath}`);
+        }
+    }
+    catch (error) {
+        console.error(`\nLỗi khi giải mã dữ liệu giấc ngủ: ${error.message}`);
+        console.error('Chi tiết lỗi:', error.stack);
+        // Gợi ý cách khắc phục
+        console.log('\nGợi ý khắc phục:');
+        console.log('1. Kiểm tra định dạng dữ liệu trong file log');
+        console.log('2. Đảm bảo file log chứa các gói dữ liệu giấc ngủ hợp lệ (05 04, 05 13, 05 11, v.v.)');
+        console.log('3. Sử dụng tùy chọn --test để chạy với dữ liệu mẫu');
+        console.log('4. Đảm bảo định dạng logs từ thiết bị được thu thập chính xác');
+    }
+}
+/**
+ * Chuyển đổi mã loại giấc ngủ sang chuỗi mô tả
+ */
+function formatSleepType(type) {
+    switch (type) {
+        case 1: return "Ngủ sâu (Deep Sleep)";
+        case 2: return "Ngủ nhẹ (Light Sleep)";
+        case 3: return "Mắt chuyển động nhanh (REM)";
+        case 4: return "Thức giấc (Awake)";
+        default: return "Không xác định";
+    }
+}
+/**
+ * Hiển thị hướng dẫn sử dụng
+ */
+function printUsage() {
+    console.log(`
+Cách sử dụng: node index.js [file_log] [tùy_chọn]
+
+Tùy chọn:
+  --test, -t           Sử dụng dữ liệu mẫu thay vì đọc từ file
+  --output, -o FILE    Chỉ định file đầu ra (mặc định: sleep-report.txt)
+  --verbose, -v        Hiển thị thêm thông tin chi tiết về dữ liệu gốc
+  --analyze, -a        Phân tích chi tiết các đoạn giấc ngủ và nhịp tim
+
+Ví dụ:
+  node index.js                                  # Sử dụng file log-connect.txt mặc định
+  node index.js my-log.txt                       # Sử dụng file my-log.txt
+  node index.js --test                           # Dùng dữ liệu mẫu
+  node index.js my-log.txt --output report.txt   # Lưu báo cáo vào file report.txt
+  node index.js --test --analyze --verbose       # Hiển thị chi tiết và phân tích dữ liệu mẫu
+  `);
+}
+// Kiểm tra nếu được gọi trực tiếp (không phải import)
+if (require.main === module) {
+    // Hiển thị hướng dẫn sử dụng nếu có tham số --help hoặc -h
+    if (process.argv.includes('--help') || process.argv.includes('-h')) {
+        printUsage();
+    }
+    else {
+        // Chạy chương trình chính
+        main().catch(error => {
+            console.error('Lỗi không xác định:', error);
+            process.exit(1);
+        });
+    }
+}

@@ -1,0 +1,817 @@
+[+] Script bắt đầu chạy - Debug các chức năng liên quan đến giấc ngủ
+[+] Đã hook YCBTClient.getSleepStatus()
+[+] Đã hook YCBTClient.appSleepWriteBack()
+[+] Đã hook YCBTClient.settingSleepRemind()
+[+] Đã hook YCBTClientImpl.sendSingleData2Device()
+[-] Lỗi khi hook BluetoothGattCallback: Error: onCharacteristicChanged(): has more than one overload, use .overload(<signature>) to choose from:
+        .overload('android.bluetooth.BluetoothGatt', 'android.bluetooth.BluetoothGattCharacteristic')   
+        .overload('android.bluetooth.BluetoothGatt', 'android.bluetooth.BluetoothGattCharacteristic', '[B')
+Error: onCharacteristicChanged(): has more than one overload, use .overload(<signature>) to choose from:
+        .overload('android.bluetooth.BluetoothGatt', 'android.bluetooth.BluetoothGattCharacteristic')   
+        .overload('android.bluetooth.BluetoothGatt', 'android.bluetooth.BluetoothGattCharacteristic', '[B')
+    at Q (frida/node_modules/frida-java-bridge/lib/class-factory.js:626)
+    at X (frida/node_modules/frida-java-bridge/lib/class-factory.js:621)
+    at set (frida/node_modules/frida-java-bridge/lib/class-factory.js:1103)
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:433)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/vm.js:12)
+    at _performPendingVmOps (frida/node_modules/frida-java-bridge/index.js:248)
+    at <anonymous> (frida/node_modules/frida-java-bridge/index.js:223)
+[-] Không tìm thấy class: com.yucheng.ycbtsdk.ble.BleManager
+[-] Không tìm thấy class: com.yucheng.ycbtsdk.ble.BluetoothLeService
+[-] Không tìm thấy class: com.yucheng.ycbtsdk.ble.BleConnection
+[!] Không tìm thấy phương thức onDataReceiveFromDevice trong YCBTClientImpl
+[+] Đã hook DataUnpack.unpackAlarmData()
+[+] Đã hook DataUnpack.unpackAppEcgPpgStatus()
+[+] Đã hook DataUnpack.unpackBodyData()
+[+] Đã hook DataUnpack.unpackCollectSummaryInfo()
+[+] Đã hook DataUnpack.unpackContacts()
+[+] Đã hook DataUnpack.unpackCustomizeCGM()
+[+] Đã hook DataUnpack.unpackCustomizeData()
+[+] Đã hook DataUnpack.unpackDeviceInfoData()
+[+] Đã hook DataUnpack.unpackDeviceName()
+[+] Đã hook DataUnpack.unpackDeviceScreenInfo()
+[+] Đã hook DataUnpack.unpackDeviceUserConfigData()
+[+] Đã hook DataUnpack.unpackDialInfo()
+[+] Đã hook DataUnpack.unpackEcgLocation()
+[+] Đã hook DataUnpack.unpackFileCount()
+[+] Đã hook DataUnpack.unpackFileData()
+[+] Đã hook DataUnpack.unpackFileList()
+[+] Đã hook DataUnpack.unpackFileSync()
+[+] Đã hook DataUnpack.unpackFileSyncVerify()
+[+] Đã hook DataUnpack.unpackGetALiIOTActivationState()
+[+] Đã hook DataUnpack.unpackGetAlgorithmicLicense()
+[+] Đã hook DataUnpack.unpackGetAllRealDataFromDevice()
+[+] Đã hook DataUnpack.unpackGetCardInfo()
+[+] Đã hook DataUnpack.unpackGetChipScheme()
+[+] Đã hook DataUnpack.unpackGetCurrentAmbientLightIntensity()
+[+] Đã hook DataUnpack.unpackGetCurrentAmbientTempAndHumidity()
+[+] Đã hook DataUnpack.unpackGetCurrentSystemWorkingMode()
+[+] Đã hook DataUnpack.unpackGetDeviceRemindInfo()
+[+] Đã hook DataUnpack.unpackGetEcgMode()
+[+] Đã hook DataUnpack.unpackGetEventReminder()
+[+] Đã hook DataUnpack.unpackGetHeavenEarthAndFiveElement()
+[+] Đã hook DataUnpack.unpackGetHistoryOutline()
+[+] Đã hook DataUnpack.unpackGetInflatedBlood()
+[+] Đã hook DataUnpack.unpackGetInsuranceRelatedInfo()
+[+] Đã hook DataUnpack.unpackGetLaserTreatmentParams()
+[+] Đã hook DataUnpack.unpackGetMeasurementFunction()
+[+] Đã hook DataUnpack.unpackGetNowSport()
+[+] Đã hook DataUnpack.unpackGetPowerStatistics()
+[+] Đã hook DataUnpack.unpackGetRealBloodOxygen()
+[+] Đã hook DataUnpack.unpackGetRealTemp()
+[+] Đã hook DataUnpack.unpackGetScheduleInfo()
+[+] Đã hook DataUnpack.unpackGetScreenInfo()
+[+] Đã hook DataUnpack.unpackGetScreenParameters()
+[+] Đã hook DataUnpack.unpackGetSensorSamplingInfo()
+[+] Đã hook DataUnpack.unpackGetSleepStatus()
+[+] Đã hook DataUnpack.unpackGetStatusOfManualMode()
+[+] Đã hook DataUnpack.unpackGetUploadConfigurationInfoOfReminder()
+[+] Đã hook DataUnpack.unpackGetUploadOGA()
+[+] Đã hook DataUnpack.unpackGetWit()
+[+] Đã hook DataUnpack.unpackHealthData()
+[+] Đã hook DataUnpack.unpackHengAiData()
+[+] Đã hook DataUnpack.unpackHomeTheme()
+[+] Đã hook DataUnpack.unpackInsuranceNews()
+[+] Đã hook DataUnpack.unpackMulPhotoelectricWaveform()
+[+] Đã hook DataUnpack.unpackOTAData()
+[+] Đã hook DataUnpack.unpackParseData()
+[+] Đã hook DataUnpack.unpackRealAmbientlightData()
+[+] Đã hook DataUnpack.unpackRealBloodData()
+[+] Đã hook DataUnpack.unpackRealBloodOxygenData()
+[+] Đã hook DataUnpack.unpackRealComprehensiveData()
+[+] Đã hook DataUnpack.unpackRealECGData()
+[+] Đã hook DataUnpack.unpackRealGsensorData()
+[+] Đã hook DataUnpack.unpackRealHeartData()
+[+] Đã hook DataUnpack.unpackRealPPGData()
+[+] Đã hook DataUnpack.unpackRealRespiratoryRateData()
+[+] Đã hook DataUnpack.unpackRealSensorData()
+[+] Đã hook DataUnpack.unpackRealSportData()
+[+] Đã hook DataUnpack.unpackRealUploadRunData()
+[+] Đã hook DataUnpack.unpackTerminalConf()
+[+] Đã hook DataUnpack.unpackUIFileBreakInfo()
+[+] Đã hook DataUnpack.unpackWit()
+[+] Đã hook các phương thức trong SleepDbUtils
+[-] Không tìm thấy class: com.yucheng.smarthealthpro.home.presenter.SleepPresenter
+[-] Không tìm thấy class: com.yucheng.smarthealthpro.home.model.SleepModel
+[+] Tìm thấy class liên quan đến đồng bộ: com.yucheng.smarthealthpro.greendao.utils.SleepDbUtils        
+[+] Đã hook com.yucheng.smarthealthpro.greendao.utils.SleepDbUtils.deleteAll()
+[+] Đã hook com.yucheng.smarthealthpro.greendao.utils.SleepDbUtils.deleteMsgModel()
+[+] Đã hook com.yucheng.smarthealthpro.greendao.utils.SleepDbUtils.queryIdDelete()
+[-] Không tìm thấy class: com.yucheng.smarthealthpro.sync.SleepSyncManager
+[-] Không tìm thấy class: com.yucheng.smarthealthpro.sync.DataSyncManager
+[+] Đã hook các constructors của SleepResponse beans
+[+] Script đã khởi tạo hoàn tất - Đang theo dõi các chức năng liên quan đến giấc ngủ...
+[21081111RG::PID::32627 ]->
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 515 (0x203)
+  ├── Data: [47 50]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 256 (0x100)
+  ├── Data: [e9 07 04 16 13 2c 33 01]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 513 (0x201)
+  ├── Data: [47 46]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 539 (0x21b)
+  ├── Data: []
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[UNPACK] Gọi DataUnpack.unpackGetChipScheme()
+  ├── Tham số 0: 4
+  ├── DataType trong kết quả: 539
+  └── Kết thúc DataUnpack.unpackGetChipScheme()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 512 (0x200)
+  ├── Data: [47 43]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceInfoData()
+  ├── Tham số 0: -93,0,18,2,0,100,0,1,0,3,0,2,-108,7,17,-3,39,-106,1,-108,11,-51,28,13
+  ├── DataType trong kết quả: 512
+  └── Kết thúc DataUnpack.unpackDeviceInfoData()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [fe dc ba c0 06 00 02 00 01 ef]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [00 bd f9 19 3b 28 ac 58 e9 0c 94 63 05 35 52 71 30]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [02 70 61 73 73]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [01 bf 19 8e f5 7a 1b 49 57 5a 55 ba 95 8d f5 59 d6]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [fe dc ba c0 03 00 06 cb ff ff ff ff 00 ef]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 512 (0x200)
+  ├── Data: [47 43]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 512 (0x200)
+  ├── Data: [47 43]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 519 (0x207)
+  ├── Data: [43 46]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 552 (0x228)
+  ├── Data: [47 46]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 512 (0x200)
+  ├── Data: [47 43]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 265 (0x109)
+  ├── Data: [00 31 34]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 515 (0x203)
+  ├── Data: [47 50]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [fe dc ba c0 07 00 06 cc ff 00 00 00 04 ef]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 512 (0x200)
+  ├── Data: [47 43]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceInfoData()
+  ├── Tham số 0: -93,0,18,2,0,100,0,1,0,3,0,0,69,66,32,0,70,66,1,0,64,4,16,0
+  ├── DataType trong kết quả: 512
+  └── Kết thúc DataUnpack.unpackDeviceInfoData()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceInfoData()
+  ├── Tham số 0: -93,0,18,2,0,100,33,1,0,3,-29,1,24,11,33,0,27,0,1,0,116,64,32,0
+  ├── DataType trong kết quả: 512
+  └── Kết thúc DataUnpack.unpackDeviceInfoData()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 274 (0x112)
+  ├── Data: [00]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 260 (0x104)
+  ├── Data: [00 00 00 01 00 00]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 268 (0x10c)
+  ├── Data: [01 1e]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 265 (0x109)
+  ├── Data: [00 31 34]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 515 (0x203)
+  ├── Data: [47 50]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 259 (0x103)
+  ├── Data: [aa 41 00 14]
+  ├── Timeout: 2
+  ├── BleDataResponse: [object Object]
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [fe dc ba c0 07 00 06 cc ff 00 00 00 04 ef]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[UNPACK] Gọi DataUnpack.unpackHealthData()
+  ├── Tham số 0: -128,-104,-103,47,-120,-97,-103,47,54,0,38,0,2,0,112,107,-102,47,120,114,-102,47,-109,0,93,0,5,0,120,114,-102,47,-128,121,-102,47,80,0,50,0,3,0,-96,-107,-102,47,-88,-100,-102,47,34,0,21,0,1,0
+  ├── Tham số 1: 2
+  ├── DataType trong kết quả: 1282
+  └── Kết thúc DataUnpack.unpackHealthData()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-20
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-19
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-18
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-17
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-16
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-15
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[UNPACK] Gọi DataUnpack.unpackHealthData()
+  ├── Tham số 0: -81,-6,60,1,-117,-97,-103,47,-85,-13,-103,47,-1,-1,-15,14,61,13,-33,55,-14,-117,-97,-103,47,46,5,0,-15,-70,-92,-103,47,-125,1,0,-13,62,-90,-103,47,125,1,0,-14,-68,-89,-103,47,-77,2,0,-13,112,-86,-103,47,87,0,0,-14,-57,-86,-103,47,-78,4,0,-15,122,-81,-103,47,-5,0,0,-13,118,-80,-103,47,-110,1,0,-14,9,-78,-103,47,15,2,0,-15,25,-76,-103,47,100,2,0,-14,125,-74,-103,47,-72,6,0,-13,53,-67,-103,47,108,0,0,-14,-95,-67,-103,47,-69,4,0,-15,93,-62,-103,47,-55,0,0,-13,39,-61,-103,47,-116,1,0,-14,-76,-60,-103,47,-40,3,0,-13,-115,-56,-103,47,75,0,0,-14,-40,-56,-103,47,-112,4,0,-13,104,-51,-103,47,-45,0,0,-14,59,-50,-103,47,-95,4,0,-15,-35,-46,-103,47,-111,1,0,-13,111,-44,-103,47,-56,1,0,-14,56,-42,-103,47,-87,4,0,-15,-30,-38,-103,47,-77,0,0,-13,-106,-37,-103,47,17,1,0,-14,-88,-36,-103,47,-15,0,0,-15,-102,-35,-103,47,71,4,0,-14,-31,-31,-103,47,-27,1,0,-13,-58,-29,-103,47,23,3,0,-14,-35,-26,-103,47,11,0,0,-13,-24,-26,-103,47,113,0,0,-14,89,-25,-103,47,-88,3,0,-15,1,-21,-103,47,7,1,0,-13,8,-20,-103,47,-77,0,0,-14,-69,-20,-103,47,-36,4,0,-13,-105,-15,-103,47,97,1,0,-14,-8,-14,-103,47,-77,0,0
+  ├── Tham số 1: 4
+  ├── DataType trong kết quả: 1284
+  └── Kết thúc DataUnpack.unpackHealthData()
+
+[DB] Gọi SleepDbUtils.insertMsgModel()
+  ├── ID: null
+  ├── StartTime: 1745256603000 (04/22/2025, 12:30:03 AM)
+  ├── EndTime: 1745278139000 (04/22/2025, 06:28:59 AM)
+  ├── DeepSleepTotal: 3389 giây
+  ├── LightSleepTotal: 14303 giây
+  ├── REM Total: Java.Field{holder: com.yucheng.smarthealthpro.greendao.bean.SleepDb@6303ca1, fieldType: 2, fieldReturnType: I, value: 3825} giây
+  ├── WakeCount: Java.Field{holder: com.yucheng.smarthealthpro.greendao.bean.SleepDb@6303ca1, fieldType: 2, fieldReturnType: I, value: 0} lần
+  ├── WakeDuration: Java.Field{holder: com.yucheng.smarthealthpro.greendao.bean.SleepDb@6303ca1, fieldType: 2, fieldReturnType: I, value: 0} giây
+  ├── TimeYearToDate: 2025-04-22
+  ├── [TỔNG HỢP] Thời gian ngủ: 17692Java.Field{holder: com.yucheng.smarthealthpro.greendao.bean.SleepDb@6303ca1, fieldType: 2, fieldReturnType: I, value: 3825} giây
+  └── Kết quả: true
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-20
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-19
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-18
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-17
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-16
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-15
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[UNPACK] Gọi DataUnpack.unpackHealthData()
+  ├── Tham số 0: -84,-97,-103,47,0,78,-72,-90,-103,47,0,66,-84,-83,-103,47,0,53,-68,-76,-103,47,0,67,-65,-69,-103,47,0,72,-59,-62,-103,47,0,63,-38,-55,-103,47,0,73,-32,-48,-103,47,0,109,-37,-41,-103,47,0,50,-28,-34,-103,47,0,65,-16,-27,-103,47,0,65,-12,-20,-103,47,0,62
+  ├── Tham số 1: 6
+  ├── DataType trong kết quả: 1286
+  └── Kết thúc DataUnpack.unpackHealthData()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-20
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-19
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-18
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-17
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-16
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-15
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[UNPACK] Gọi DataUnpack.unpackHealthData()
+  ├── Tham số 0: -84,-97,-103,47,1,110,74,78,-72,-90,-103,47,1,108,71,66,-84,-83,-103,47,1,100,68,53,-68,-76,-103,47,1,108,71,67,-65,-69,-103,47,1,108,73,72,-59,-62,-103,47,1,105,69,63,-38,-55,-103,47,1,107,72,73,-32,-48,-103,47,1,122,82,109,-37,-41,-103,47,1,100,68,50,-28,-34,-103,47,1,108,70,65,-16,-27,-103,47,1,105,70,65,-12,-20,-103,47,1,104,70,62
+  ├── Tham số 1: 8
+  ├── DataType trong kết quả: 1288
+  └── Kết thúc DataUnpack.unpackHealthData()
+
+[UNPACK] Gọi DataUnpack.unpackHealthData()
+  ├── Tham số 0: -84,-97,-103,47,54,0,78,110,74,98,16,45,2,0,15,0,0,0,43,3,-72,-90,-103,47,54,0,66,108,71,97,13,44,3,0,15,0,0,0,35,49,-84,-83,-103,47,54,0,53,100,68,92,11,41,3,0,15,0,0,0,-86,73,-68,-76,-103,47,54,0,67,108,71,98,13,46,2,0,15,0,0,0,51,-11,-65,-69,-103,47,54,0,72,108,73,98,14,40,4,0,15,0,0,0,-115,-61,-59,-62,-103,47,54,0,63,105,69,97,13,46,3,0,15,0,0,0,53,-99,-38,-55,-103,47,54,0,73,107,72,98,15,37,6,0,15,0,0,0,-116,-43,-32,-48,-103,47,54,0,109,122,82,96,22,39,5,0,15,0,0,0,-3,-72,-37,-41,-103,47,54,0,50,100,68,90,10,41,6,0,15,0,0,0,2,-17,-28,-34,-103,47,54,0,65,108,70,97,13,46,3,0,15,0,0,0,-91,-18,-16,-27,-103,47,54,0,65,105,70,97,13,37,4,0,15,0,0,0,-88,114,-12,-20,-103,47,54,0,62,104,70,96,12,39,6,0,15,0,0,0,-76,29
+  ├── Tham số 1: 9
+  ├── DataType trong kết quả: 1289
+  └── Kết thúc DataUnpack.unpackHealthData()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceInfoData()
+  ├── Tham số 0: -93,0,18,2,0,100,0,1,0,3,33,2,-104,-56,-7,-110,-79,4,1,98,47,127,100,-29
+  ├── DataType trong kết quả: 512
+  └── Kết thúc DataUnpack.unpackDeviceInfoData()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceName()
+  ├── Tham số 0: 82,49,49,77,0
+  ├── DataType trong kết quả: 515
+  └── Kết thúc DataUnpack.unpackDeviceName()
+
+[BLE] Gọi YCBTClientImpl.sendSingleData2Device()
+  ├── DataType: 43690 (0xaaaa)
+  ├── Data: [fe dc ba c0 07 00 06 cc ff 00 00 00 04 ef]
+  ├── Timeout: 2
+  ├── BleDataResponse: null
+  ├── Không thể xác định tên dataType: Error: java.lang.NoSuchFieldException: 0
+  └── Kết thúc YCBTClientImpl.sendSingleData2Device()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceInfoData()
+  ├── Tham số 0: -93,0,18,2,0,100,0,1,0,3,-29,2,68,-37,-92,-2,44,57,1,-26,-51,116,-52,86
+  ├── DataType trong kết quả: 512
+  └── Kết thúc DataUnpack.unpackDeviceInfoData()
+
+[UNPACK] Gọi DataUnpack.unpackDeviceName()
+  ├── Tham số 0: 82,49,49,77,0
+  ├── DataType trong kết quả: 515
+  └── Kết thúc DataUnpack.unpackDeviceName()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[UNPACK] Gọi DataUnpack.unpackRealSportData()
+  ├── Tham số 0: 59,1,-53,0,13,0
+  ├── DataType trong kết quả: 1536
+  └── Kết thúc DataUnpack.unpackRealSportData()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[UNPACK] Gọi DataUnpack.unpackRealSportData()
+  ├── Tham số 0: 59,1,-53,0,13,0
+  ├── DataType trong kết quả: 1536
+  └── Kết thúc DataUnpack.unpackRealSportData()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-20
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-19
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-18
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-17
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-16
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-15
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+  ├── Tham số ngày: 2025-04-22
+  ├── Số lượng kết quả: 1
+  ├── Kết quả #0
+TypeError: not a function
+    at <anonymous> (C:\Users\Le Minh Tuan\Downloads\frida\debug_log.js:774)
+    at apply (native)
+    at re (frida/node_modules/frida-java-bridge/lib/class-factory.js:677)
+    at <anonymous> (frida/node_modules/frida-java-bridge/lib/class-factory.js:655)
+[DB] Gọi SleepDbUtils.queryIdYearToDay()
+
+  ├── Tham số ngày: 2025-04-21
+  ├── Số lượng kết quả: 0
+  └── Kết thúc SleepDbUtils.queryIdYearToDay()
+
+[UNPACK] Gọi DataUnpack.unpackRealSportData()
+  ├── Tham số 0: 59,1,-53,0,13,0
+  ├── DataType trong kết quả: 1536
+  └── Kết thúc DataUnpack.unpackRealSportData()
